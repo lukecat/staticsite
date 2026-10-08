@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-N47EPZDZGS"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-N47EPZDZGS');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ミニ「パーティクルライフ」</title>
+    <!-- Tailwind CSS CDNを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Interフォントを適用 */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8;
+            /* 薄いグレーの背景 */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            /* 修正: 画面が切れる問題を解決するため、必要に応じて縦スクロールを許可 */
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* 横スクロールは常に非表示 */
+        }
+
+        canvas {
+            background-color: #1a202c;
+            /* ダークな背景色 */
+            border: 2px solid #4a5568;
+            /* 濃いめのボーダー */
+            border-radius: 12px;
+            /* 角を丸くする */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+            /* 影 */
+            display: block;
+            touch-action: none;
+            /* タッチイベントのデフォルト動作を無効化 */
+            width: 100%;
+            /* レスポンシブ幅 */
+            max-width: 800px;
+            /* 最大幅 */
+            aspect-ratio: 1 / 1;
+            /* 正方形を維持 */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            /* 最大幅を設定 */
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            /* ボタンが収まらない場合に折り返す */
+            justify-content: center;
+            gap: 15px;
+            padding: 15px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            outline: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-primary {
+            background-color: #4f46e5;
+            /* インディゴ */
+            color: white;
+        }
+
+        .button-secondary {
+            background-color: #6b7280;
+            /* グレー */
+            color: white;
+        }
+
+        .button-success {
+            background-color: #22c55e;
+            /* エメラルド */
+            color: white;
+        }
+
+        .button-info {
+            background-color: #0ea5e9;
+            /* スカイブルー */
+            color: white;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 640px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .button {
+                width: 100%;
+            }
+        }
+
+        /* Cookie Consent Pop-up Styles */
+        .cookie-consent-popup {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #2c3e50;
+            /* Deep blue-gray, similar to header */
+            color: #ecf0f1;
+            /* Light text */
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 1000;
+            /* Ensure it's on top of other content */
+            box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(100%);
+            /* Start off-screen */
+            transition: transform 0.5s ease-out;
+            /* Smooth slide-up animation */
+        }
+
+        .cookie-consent-popup.show {
+            transform: translateY(0);
+            /* Slide into view */
+        }
+
+        .cookie-consent-popup p {
+            margin-bottom: 0.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .cookie-consent-popup a {
+            color: #90caf9;
+            /* Light blue for links */
+            text-decoration: underline;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .cookie-consent-popup a:hover {
+            color: #e3f2fd;
+        }
+
+        .cookie-consent-popup button {
+            background-color: #3498db;
+            /* Blue button */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            border: none;
+            cursor: pointer;
+        }
+
+        .cookie-consent-popup button:hover {
+            background-color: #2980b9;
+            /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+
+        /* Responsive adjustments for the pop-up */
+        @media (min-width: 640px) {
+
+            /* sm breakpoint */
+            .cookie-consent-popup {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 1rem 2rem;
+            }
+
+            .cookie-consent-popup p {
+                text-align: left;
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">ミニ「パーティクルライフ」</h1>
+        <canvas id="particleLifeCanvas"></canvas>
+        <div class="controls">
+            <button id="startButton" class="button button-success">開始</button>
+            <button id="stopButton" class="button button-secondary">停止</button>
+            <button id="resetButton" class="button button-primary">リセット</button>
+            <label for="numParticles" class="text-gray-700 flex items-center gap-2">
+                粒子数:
+                <input type="number" id="numParticles" value="200" min="50" max="1000" step="50"
+                    class="w-24 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </label>
+            <label for="numTypes" class="text-gray-700 flex items-center gap-2">
+                種類数:
+                <input type="number" id="numTypes" value="3" min="2" max="6" step="1"
+                    class="w-24 p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // Get canvas element and context
+        const canvas = document.getElementById('particleLifeCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get control elements
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const resetButton = document.getElementById('resetButton');
+        const numParticlesInput = document.getElementById('numParticles');
+        const numTypesInput = document.getElementById('numTypes');
+
+        // Simulation parameters
+        let numParticles = parseInt(numParticlesInput.value);
+        let numTypes = parseInt(numTypesInput.value);
+        const particleRadius = 2; // Radius of each particle for drawing
+        const maxSpeed = 5; // Maximum speed to prevent particles from flying off
+        const friction = 0.9; // Friction to slow down particles
+        const interactionRadius = 100; // Max distance for interaction
+        const minInteractionDistance = 10; // Min distance for interaction (repulsion zone)
+        const forceStrengthMultiplier = 0.5; // Overall force strength multiplier
+
+        let particles = []; // Array to hold particle objects
+        let interactionMatrix = []; // Matrix defining interaction strengths between types
+        let animationFrameId = null; // requestAnimationFrame ID
+        let isRunning = false; // Simulation running state
+
+        // Define colors for different particle types
+        const typeColors = [
+            '#ef4444', // Red (Type 0)
+            '#22c55e', // Green (Type 1)
+            '#3b82f6', // Blue (Type 2)
+            '#eab308', // Yellow (Type 3)
+            '#a855f7', // Purple (Type 4)
+            '#06b6d4'  // Cyan (Type 5)
+        ];
+
+        /**
+         * Particle class definition.
+         * Each particle has position, velocity, type, and color.
+         */
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2; // Initial random velocity
+                this.vy = (Math.random() - 0.5) * 2;
+                this.type = type;
+                this.color = typeColors[type % typeColors.length]; // Assign color based on type
+            }
+
+            /**
+             * Draws the particle on the canvas.
+             */
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, particleRadius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        /**
+         * Initializes canvas size and sets up event listeners for resizing.
+         */
+        function initializeCanvasSize() {
+            // Set canvas width to fill parent, up to a max-width
+            const containerWidth = canvas.parentElement.clientWidth - 40; // Account for padding
+            canvas.width = Math.min(containerWidth, 800);
+            canvas.height = canvas.width; // Keep it square
+        }
+
+        /**
+         * Generates a random interaction matrix.
+         * Each value represents the force strength between two types.
+         */
+        function generateInteractionMatrix() {
+            interactionMatrix = [];
+            for (let i = 0; i < numTypes; i++) {
+                interactionMatrix[i] = [];
+                for (let j = 0; j < numTypes; j++) {
+                    // Random value between -1 and 1
+                    interactionMatrix[i][j] = (Math.random() * 2 - 1) * forceStrengthMultiplier;
+                }
+            }
+            console.log("Interaction Matrix:", interactionMatrix);
+        }
+
+        /**
+         * Initializes particles with random positions and types.
+         */
+        function initializeParticles() {
+            particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const type = Math.floor(Math.random() * numTypes);
+                particles.push(new Particle(x, y, type));
+            }
+        }
+
+        /**
+         * Draws all particles on the canvas.
+         */
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            particles.forEach(p => p.draw()); // Draw each particle
+        }
+
+        /**
+         * Updates the state of all particles based on interactions.
+         */
+        function update() {
+            // Calculate forces for each particle
+            for (let i = 0; i < particles.length; i++) {
+                const pA = particles[i];
+                for (let j = 0; j < particles.length; j++) {
+                    if (i === j) continue; // A particle does not interact with itself
+                    const pB = particles[j];
+
+                    const dx = pB.x - pA.x;
+                    const dy = pB.y - pA.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Normalize distance to avoid division by zero and handle very close particles
+                    if (dist === 0) dist = 0.0001;
+
+                    // Get interaction strength from the matrix
+                    const strength = interactionMatrix[pA.type][pB.type];
+
+                    // Apply force based on distance and strength
+                    // This is a simplified force function. More complex functions exist.
+                    if (dist < interactionRadius) {
+                        let force = 0;
+                        if (dist < minInteractionDistance) {
+                            // Strong repulsion at very close distances
+                            force = -0.5 * (minInteractionDistance - dist) / minInteractionDistance;
+                        } else {
+                            // Attraction/Repulsion based on strength and distance
+                            force = strength * (1 - dist / interactionRadius);
+                        }
+
+                        // Apply force to velocity
+                        pA.vx += (dx / dist) * force;
+                        pA.vy += (dy / dist) * force;
+                    }
+                }
+            }
+
+            // Update positions and apply boundary conditions
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+
+                // Apply friction
+                p.vx *= friction;
+                p.vy *= friction;
+
+                // Clamp speed to maxSpeed
+                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                if (speed > maxSpeed) {
+                    p.vx = (p.vx / speed) * maxSpeed;
+                    p.vy = (p.vy / speed) * maxSpeed;
+                }
+
+                // Update position
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Boundary conditions: Wrap around the edges
+                if (p.x < 0) p.x += canvas.width;
+                if (p.x > canvas.width) p.x -= canvas.width;
+                if (p.y < 0) p.y += canvas.height;
+                if (p.y > canvas.height) p.y -= canvas.height;
+            }
+        }
+
+        /**
+         * Main animation loop.
+         */
+        function animate() {
+            update(); // Update particle states
+            draw();   // Draw particles
+            animationFrameId = requestAnimationFrame(animate); // Continue loop
+        }
+
+        /**
+         * Starts the simulation.
+         */
+        function startSimulation() {
+            if (!isRunning) {
+                isRunning = true;
+                animate();
+                startButton.disabled = true;
+                stopButton.disabled = false;
+            }
+        }
+
+        /**
+         * Stops the simulation.
+         */
+        function stopSimulation() {
+            if (isRunning) {
+                isRunning = false;
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        }
+
+        /**
+         * Resets the simulation with new random particles and interaction matrix.
+         */
+        function resetSimulation() {
+            stopSimulation(); // Stop if running
+            numParticles = parseInt(numParticlesInput.value);
+            numTypes = parseInt(numTypesInput.value);
+            generateInteractionMatrix(); // Generate new interaction rules
+            initializeParticles(); // Create new particles
+            draw(); // Initial draw
+            startButton.disabled = false; // Enable start button
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startSimulation);
+        stopButton.addEventListener('click', stopSimulation);
+        resetButton.addEventListener('click', resetSimulation);
+
+        // Handle changes in particle count or type count
+        numParticlesInput.addEventListener('change', resetSimulation);
+        numTypesInput.addEventListener('change', resetSimulation);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            stopSimulation(); // Stop simulation on resize
+            initializeCanvasSize(); // Re-initialize canvas size
+            resetSimulation(); // Reset particles and interaction matrix
+        });
+
+        // Initial setup when the window loads
+        window.onload = function () {
+            initializeCanvasSize(); // Set initial canvas size
+            resetSimulation(); // Perform initial setup (generate matrix, create particles, draw)
+        };
+    </script>
+    <!-- Cookie Consent Pop-up HTML -->
+    <div id="cookieConsentPopup" class="cookie-consent-popup">
+        <p>
+            本ウェブサイトでは、サイトの改善のためにクッキーを使用しています。
+            詳細については、<a href="privacypolicy.html" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>をご覧ください。
+        </p>
+        <button id="acceptCookie">同意する</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieConsentPopup = document.getElementById('cookieConsentPopup');
+            const acceptCookieButton = document.getElementById('acceptCookie');
+            const cookieConsentKey = 'cookie_consent_given';
+
+            // Check if consent has been given previously
+            if (!localStorage.getItem(cookieConsentKey)) {
+                // If not, show the pop-up after a short delay
+                setTimeout(() => {
+                    cookieConsentPopup.classList.add('show');
+                }, 1000); // Show after 1 second
+            }
+
+            // Event listener for the "Accept" button
+            acceptCookieButton.addEventListener('click', () => {
+                // Hide the pop-up
+                cookieConsentPopup.classList.remove('show');
+                // Store consent in local storage
+                localStorage.setItem(cookieConsentKey, 'true');
+            });
+        });
+    </script>
+</body>
+
+</html>
