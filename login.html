@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易合言葉認証ページ</title>
+    <style>
+        /* 共通スタイル */
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f8;
+            color: #333;
+        }
+
+        /* ログイン画面（オーバーレイ） */
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .auth-box {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            width: 300px;
+            text-align: center;
+        }
+
+        .auth-box h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        .auth-box input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .auth-box button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0066cc;
+            color: #white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .auth-box button:hover {
+            background-color: #0052a3;
+        }
+
+        #error-message {
+            color: #d9534f;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* メインコンテンツ（初期状態は隠す） */
+        #main-content {
+            display: none;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 認証画面 -->
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h2>合言葉を入力してください</h2>
+            <form id="auth-form" onsubmit="handleLogin(event)">
+                <input type="password" id="passphrase" placeholder="合言葉" required>
+                <button type="submit">ログイン</button>
+                <div id="error-message">合言葉が違います</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- メインコンテンツ -->
+    <div id="main-content">
+        <h1>ようこそ！認証成功ページへ</h1>
+        <p>ここに保護したいコンテンツを記述します。</p>
+        <button onclick="handleLogout()"
+            style="padding: 8px 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer;">ログアウト（再ロック）</button>
+    </div>
+
+    <script>
+        // 設定：ここに正しい合言葉を設定します
+        const CORRECT_PASSPHRASE = "secret123";
+
+        // ページ読み込み時にセッションストレージをチェック
+        window.addEventListener('DOMContentLoaded', () => {
+            const isAuthenticated = sessionStorage.getItem('is_authenticated');
+            if (isAuthenticated === 'true') {
+                unlockContent();
+            }
+        });
+
+        // ログイン処理
+        function handleLogin(event) {
+            event.preventDefault(); // フォームのデフォルト送信を防止
+            const inputVal = document.getElementById('passphrase').value;
+            const errorMsg = document.getElementById('error-message');
+
+            if (inputVal === CORRECT_PASSPHRASE) {
+                // セッションストレージに認証状態を保存（ブラウザを閉じるとリセットされる）
+                sessionStorage.setItem('is_authenticated', 'true');
+                unlockContent();
+            } else {
+                // エラー表示
+                errorMsg.style.display = 'block';
+                document.getElementById('passphrase').value = '';
+            }
+        }
+
+        // コンテンツを表示状態にする
+        function unlockContent() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        // ログアウト処理（テスト用）
+        function handleLogout() {
+            sessionStorage.removeItem('is_authenticated');
+            location.reload(); // ページをリロードして初期状態に戻す
+        }
+    </script>
+
+</body>
+
+</html>
